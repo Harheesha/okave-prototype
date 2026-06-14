@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useContext } from 'react';
-import { AuthProvider, AuthContext } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import { Toaster } from 'react-hot-toast';
 
@@ -20,7 +20,7 @@ import Checkout from './pages/Checkout';
 import AdminDashboard from './pages/AdminDashboard';
 
 function ProtectedRoute({ children, allowedRoles }) {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div></div>;
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
@@ -28,7 +28,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 }
 
 function AppRoutes() {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
 
   return (
     <Routes>
@@ -37,38 +37,26 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterFarmer />} />
 
       {/* Buyer/Public browsing */}
-      <Route path="/" element={<Layout navLinks={[{ to: '/browse', label: 'Marketplace' }, { to: '/cart', label: 'Cart' }]} />}>
-        <Route index element={<Navigate to="/browse" replace />} />
-        <Route path="browse" element={<Marketplace />} />
-        <Route path="checkout" element={
-          <ProtectedRoute allowedRoles={['BUYER']}>
-            <Checkout />
-          </ProtectedRoute>
-        } />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Navigate to="/marketplace" replace />} />
+        <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/checkout" element={<Checkout />} />
       </Route>
 
       {/* Agent routes */}
-      <Route path="/agent" element={
-        <ProtectedRoute allowedRoles={['FARMER', 'AGENT']}>
-          <Layout navLinks={[{ to: '/agent/dashboard', label: 'Dashboard' }, { to: '/agent/create-listing', label: 'New Listing' }]} />
-        </ProtectedRoute>
-      }>
-        <Route path="dashboard" element={<AgentDashboard />} />
-        <Route path="create-listing" element={<CreateListing />} />
-        <Route path="register-farmer" element={<RegisterFarmer />} />
+      <Route element={<ProtectedRoute allowedRoles={['AGENT']}><Layout /></ProtectedRoute>}>
+        <Route path="/agent" element={<AgentDashboard />} />
+        <Route path="/agent/listings/new" element={<CreateListing />} />
+        <Route path="/agent/listings" element={<AgentDashboard />} />
       </Route>
 
       {/* Admin routes */}
-      <Route path="/admin" element={
-        <ProtectedRoute allowedRoles={['ADMIN']}>
-          <Layout navLinks={[{ to: '/admin/dashboard', label: 'Dashboard' }]} />
-        </ProtectedRoute>
-      }>
-        <Route path="dashboard" element={<AdminDashboard />} />
+      <Route element={<ProtectedRoute allowedRoles={['ADMIN']}><Layout /></ProtectedRoute>}>
+        <Route path="/admin" element={<AdminDashboard />} />
       </Route>
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/browse" replace />} />
+      <Route path="*" element={<Navigate to="/marketplace" replace />} />
     </Routes>
   );
 }
