@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
-import { AuthProvider, AuthContext } from './context/AuthContext';
+import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import Layout from './components/Layout';
 
 // Auth
@@ -36,60 +36,25 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Root redirect */}
-      <Route path="/" element={
-        user?.role === 'AGENT' ? <Navigate to="/agent/dashboard" replace /> :
-        user?.role === 'BUYER' ? <Navigate to="/buyer/marketplace" replace /> :
-        user?.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> :
-        <Navigate to="/login" replace />
-      } />
+      {/* Agent */}
+      <Route path="/agent" element={<ProtectedRoute allowedRoles={['agent']}><Layout><AgentDashboard /></Layout></ProtectedRoute>} />
+      <Route path="/agent/register-farmer" element={<ProtectedRoute allowedRoles={['agent']}><Layout><RegisterFarmer /></Layout></ProtectedRoute>} />
+      <Route path="/agent/create-listing" element={<ProtectedRoute allowedRoles={['agent']}><Layout><CreateListing /></Layout></ProtectedRoute>} />
 
-      {/* Agent routes */}
-      <Route path="/agent" element={
-        <ProtectedRoute allowedRoles={['AGENT']}>
-          <Layout navLinks={[
-            { to: '/agent/dashboard', label: 'Dashboard' },
-            { to: '/agent/register-farmer', label: 'Register Farmer' },
-            { to: '/agent/create-listing', label: 'Create Listing' },
-          ]} />
-        </ProtectedRoute>
-      }>
-        <Route path="dashboard" element={<AgentDashboard />} />
-        <Route path="register-farmer" element={<RegisterFarmer />} />
-        <Route path="create-listing" element={<CreateListing />} />
-      </Route>
+      {/* Buyer */}
+      <Route path="/marketplace" element={<ProtectedRoute allowedRoles={['buyer', 'agent', 'admin']}><Layout><Marketplace /></Layout></ProtectedRoute>} />
+      <Route path="/checkout" element={<ProtectedRoute allowedRoles={['buyer']}><Layout><Checkout /></Layout></ProtectedRoute>} />
 
-      {/* Buyer routes */}
-      <Route path="/buyer" element={
-        <ProtectedRoute allowedRoles={['BUYER']}>
-          <Layout navLinks={[
-            { to: '/buyer/marketplace', label: 'Marketplace' },
-            { to: '/buyer/checkout', label: 'Checkout' },
-          ]} />
-        </ProtectedRoute>
-      }>
-        <Route path="marketplace" element={<Marketplace />} />
-        <Route path="checkout" element={<Checkout />} />
-      </Route>
+      {/* Admin */}
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
 
-      {/* Admin routes */}
-      <Route path="/admin" element={
-        <ProtectedRoute allowedRoles={['ADMIN']}>
-          <Layout navLinks={[
-            { to: '/admin/dashboard', label: 'Dashboard' },
-          ]} />
-        </ProtectedRoute>
-      }>
-        <Route path="dashboard" element={<AdminDashboard />} />
-      </Route>
-
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Default */}
+      <Route path="/" element={<Navigate to={user ? (user.role === 'agent' ? '/agent' : user.role === 'admin' ? '/admin' : '/marketplace') : '/login'} replace />} />
     </Routes>
   );
 }
 
-export default function App() {
+function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -98,3 +63,5 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
+export default App;
